@@ -16,10 +16,14 @@ function Student() {
     useEffect(() => {
         axios.get('http://localhost:8081/')
         .then(res => {
-            console.log('Students data:', res.data);
-            setStudents(res.data);
+            console.log('🔄 DEBUG - Students data from API:', res.data);
+            console.log('🔍 DEBUG - First student:', res.data[0]);
+            setStudents(Array.isArray(res.data) ? res.data : []);
         })
-        .catch(err => console.log(err))
+        .catch(err => {
+            console.log('❌ DEBUG - API Error:', err);
+            setStudents([]);
+        })
     }, [])
 
     const handleClose = () => {
@@ -34,26 +38,46 @@ function Student() {
 
     const handleSubmit = (e) => {
         e.preventDefault()
+        
+        // DEBUG: Check what we're sending to backend
+        console.log('📤 DEBUG - Sending to backend:', {
+            name: name,
+            email: email, 
+            age: age,
+            ageType: typeof age
+        });
+        
         if(editStudent) {
-            // Update student
-            axios.put(`http://localhost:8081/update/${editStudent.ID}`, {name, email, age})
+            axios.put(`http://localhost:8081/update/${editStudent.ID}`, {
+                name: name,
+                email: email,
+                age: age
+            })
             .then(res => {
+                console.log('✅ DEBUG - Update successful:', res.data);
                 handleClose()
                 window.location.reload()
             })
-            .catch(err => console.log(err))
+            .catch(err => console.log('❌ DEBUG - Update error:', err))
         } else {
-            // Add new student
-            axios.post('http://localhost:8081/create', {name, email, age})
+            axios.post('http://localhost:8081/create', {
+                name: name,
+                email: email,
+                age: age
+            })
             .then(res => {
+                console.log('✅ DEBUG - Create successful:', res.data);
                 handleClose()
                 window.location.reload()
             })
-            .catch(err => console.log(err))
+            .catch(err => console.log('❌ DEBUG - Create error:', err))
         }
     }
 
     const handleEdit = (student) => {
+        console.log('✏️ DEBUG - Editing student:', student);
+        console.log('🎯 DEBUG - Student age value:', student.Age, 'Type:', typeof student.Age);
+        
         setEditStudent(student)
         setName(student.Name)
         setEmail(student.Email)
@@ -88,21 +112,19 @@ function Student() {
                         </tr>
                     </thead>
                     <tbody>
-                        {
-                            students.map((data, i) => (
-                                <tr key={i}>
-                                    <td>{data.Name}</td>
-                                    <td>{data.Email}</td>
-                                    <td>{data.Age}</td>
-                                    <td>
-                                        <button className='btn btn-primary me-2' 
-                                            onClick={() => handleEdit(data)}>Edit</button>
-                                        <button className='btn btn-danger' 
-                                            onClick={() => handleDelete(data.ID)}>Delete</button>
-                                    </td>
-                                </tr>
-                            ))
-                        }
+                        {Array.isArray(students) && students.map((data, i) => (
+                            <tr key={i}>
+                                <td>{data.Name}</td>
+                                <td>{data.Email}</td>
+                                <td>{data.Age}</td>
+                                <td>
+                                    <button className='btn btn-primary me-2' 
+                                        onClick={() => handleEdit(data)}>Edit</button>
+                                    <button className='btn btn-danger' 
+                                        onClick={() => handleDelete(data.ID)}>Delete</button>
+                                </td>
+                            </tr>
+                        ))}
                     </tbody>
                 </table>
 
@@ -116,18 +138,24 @@ function Student() {
                                 <label htmlFor="name">Name</label>
                                 <input type="text" placeholder='Enter Name' className='form-control'
                                     value={name} onChange={e => setName(e.target.value)}
+                                    required
                                 />
                             </div>
                             <div className='mb-3'>
                                 <label htmlFor="email">Email</label>
                                 <input type="email" placeholder='Enter Email' className='form-control'
                                     value={email} onChange={e => setEmail(e.target.value)}
+                                    required
                                 />
                             </div>
                             <div className='mb-3'>
                                 <label htmlFor="age">Age</label>
                                 <input type="number" placeholder='Enter Age' className='form-control'
-                                    value={age} onChange={e => setAge(e.target.value)}
+                                    value={age} 
+                                    onChange={e => setAge(e.target.value)}
+                                    min="1"
+                                    max="100"
+                                    required
                                 />
                             </div>
                             <div className='d-flex justify-content-end'>
